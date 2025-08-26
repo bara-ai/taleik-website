@@ -16,7 +16,7 @@ export interface User {
   updated_at: Date;
 }
 
-export interface AuthRequest extends Request {
+export interface AuthRequest extends Express.Request {
   user?: User;
 }
 

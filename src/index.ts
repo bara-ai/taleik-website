@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { CONFIG } from './config';
 import { globalErrorHandler, notFoundHandler } from './middleware/errorHandler';
 import { successResponse } from './utils/responses';
+import authRoutes from './routes/auth';
 
 const app = express();
 
@@ -27,9 +28,8 @@ app.get('/', (_req, res) => {
   }, 'API is running successfully'));
 });
 
-// API Routes (to be added)
-// app.use('/api/auth', authRoutes);
-// app.use('/api/users', userRoutes);
+// API Routes
+app.use('/api/auth', authRoutes);
 
 // Error handling
 app.use(notFoundHandler);

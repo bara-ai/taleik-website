@@ -4,7 +4,7 @@ import { config } from 'dotenv';
 config();
 
 export const CONFIG = {
-  PORT: process.env.PORT || 3000,
+  PORT: parseInt(process.env.PORT || '3000', 10),
   NODE_ENV: process.env.NODE_ENV || 'development',
   
   // Database configuration
@@ -33,9 +33,9 @@ export const CONFIG = {
   
   // Rate limiting
   RATE_LIMIT: {
-    WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-    MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
+    WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
+    MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
   },
-} as const;
+};
 
 export default CONFIG;
