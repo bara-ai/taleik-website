@@ -10,7 +10,14 @@ const router = Router();
 // Register endpoint
 router.post('/register', asyncHandler(async (req: Request, res: Response) => {
   const userData: RegisterRequest = req.body;
-  const result = await authService.register(userData);
+  
+  // Extract audit info
+  const auditInfo = {
+    ip_address: req.ip || req.connection.remoteAddress,
+    user_agent: req.get('User-Agent'),
+  };
+  
+  const result = await authService.register(userData, auditInfo);
   
   res.status(201).json(successResponse(result, 'User registered successfully'));
 }));
@@ -18,7 +25,14 @@ router.post('/register', asyncHandler(async (req: Request, res: Response) => {
 // Login endpoint
 router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   const loginData: LoginRequest = req.body;
-  const result = await authService.login(loginData);
+  
+  // Extract audit info
+  const auditInfo = {
+    ip_address: req.ip || req.connection.remoteAddress,
+    user_agent: req.get('User-Agent'),
+  };
+  
+  const result = await authService.login(loginData, auditInfo);
   
   res.json(successResponse(result, 'Login successful'));
 }));
@@ -46,13 +60,29 @@ router.put('/change-password', authenticateToken, asyncHandler(async (req: Reque
   const { currentPassword, newPassword } = req.body;
   const userId = (req as AuthRequest).user!.id;
   
-  await authService.changePassword(userId, currentPassword, newPassword);
+  // Extract audit info
+  const auditInfo = {
+    ip_address: req.ip || req.connection.remoteAddress,
+    user_agent: req.get('User-Agent'),
+  };
+  
+  await authService.changePassword(userId, currentPassword, newPassword, auditInfo);
   
   res.json(successResponse(null, 'Password changed successfully'));
 }));
 
-// Logout endpoint (for completeness - client should just delete token)
+// Logout endpoint
 router.post('/logout', authenticateToken, asyncHandler(async (req: Request, res: Response) => {
+  const userId = (req as AuthRequest).user!.id;
+  
+  // Extract audit info
+  const auditInfo = {
+    ip_address: req.ip || req.connection.remoteAddress,
+    user_agent: req.get('User-Agent'),
+  };
+  
+  await authService.logout(userId, auditInfo);
+  
   // In a stateless JWT setup, logout is handled client-side by deleting the token
   // For additional security, you might maintain a blacklist of tokens
   res.json(successResponse(null, 'Logout successful'));

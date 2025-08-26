@@ -5,6 +5,7 @@ import { CONFIG } from './config';
 import { globalErrorHandler, notFoundHandler } from './middleware/errorHandler';
 import { successResponse } from './utils/responses';
 import authRoutes from './routes/auth';
+import profileRoutes from './routes/profile';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.get('/', (_req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
 
 // Error handling
 app.use(notFoundHandler);

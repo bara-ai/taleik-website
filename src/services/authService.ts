@@ -4,6 +4,7 @@ import { CONFIG } from '../config';
 import { database } from '../database';
 import { User, JWTPayload } from '../types';
 import { AppError } from '../middleware/errorHandler';
+import { profileService } from './profileService';
 
 export interface RegisterRequest {
   email: string;
@@ -22,7 +23,10 @@ export interface AuthResponse {
 }
 
 class AuthService {
-  async register(userData: RegisterRequest): Promise<AuthResponse> {
+  async register(
+    userData: RegisterRequest, 
+    auditInfo?: { ip_address?: string; user_agent?: string }
+  ): Promise<AuthResponse> {
     // Validate input
     if (!userData.email || !userData.password) {
       throw new AppError('Email and password are required', 400);
@@ -57,6 +61,12 @@ class AuthService {
     // Generate JWT token
     const token = this.generateJWTToken(user);
 
+    // Log registration
+    await profileService.logAuditAction(user.id, 'login', {
+      action: 'user_registered',
+      email: userData.email,
+    }, auditInfo);
+
     return {
       user: {
         email: user.email,
@@ -71,7 +81,10 @@ class AuthService {
     };
   }
 
-  async login(loginData: LoginRequest): Promise<AuthResponse> {
+  async login(
+    loginData: LoginRequest,
+    auditInfo?: { ip_address?: string; user_agent?: string }
+  ): Promise<AuthResponse> {
     // Validate input
     if (!loginData.email || !loginData.password) {
       throw new AppError('Email and password are required', 400);
@@ -102,6 +115,12 @@ class AuthService {
     // Generate JWT token
     const token = this.generateJWTToken(user);
 
+    // Log successful login
+    await profileService.logAuditAction(user.id, 'login', {
+      action: 'successful_login',
+      email: loginData.email,
+    }, auditInfo);
+
     return {
       user: {
         email: user.email,
@@ -131,7 +150,12 @@ class AuthService {
     }
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    userId: string, 
+    currentPassword: string, 
+    newPassword: string,
+    auditInfo?: { ip_address?: string; user_agent?: string }
+  ): Promise<void> {
     // Validate new password
     if (newPassword.length < 8) {
       throw new AppError('Password must be at least 8 characters long', 400);
@@ -156,6 +180,26 @@ class AuthService {
     // Hash new password and update
     const newHashedPassword = await bcrypt.hash(newPassword, 12);
     await database.updateUserPassword(userId, newHashedPassword);
+
+    // Log password change and revoke all sessions
+    await profileService.logAuditAction(userId, 'password_changed', {
+      action: 'password_changed',
+      timestamp: new Date(),
+    }, auditInfo);
+
+    // In a real implementation, this would revoke all JWT tokens
+    await profileService.revokeAllSessions(userId);
+  }
+
+  async logout(
+    userId: string,
+    auditInfo?: { ip_address?: string; user_agent?: string }
+  ): Promise<void> {
+    // Log logout action
+    await profileService.logAuditAction(userId, 'logout', {
+      action: 'user_logout',
+      timestamp: new Date(),
+    }, auditInfo);
   }
 
   private generateJWTToken(user: User): string {
